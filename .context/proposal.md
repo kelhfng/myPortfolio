@@ -5,7 +5,7 @@
 - 製作一個零運行成本（$0 月租費）的個人作品集網站，並部署至網際網路供招聘者檢閱。
 - 核心定位：展現具備「Java 後端基礎」與「AI/全端開發能力」的現代軟體工程師形象。
 
-## 2. 技術棧與基礎建設 (Tech Stack & Infrastructure)
+## 2. 技術與基礎建設 (Tech Stack & Infrastructure)
 
 - **前端與核心框架**：Next.js (App Router)。
 - **UI 與樣式**：Tailwind CSS + Shadcn/ui。
