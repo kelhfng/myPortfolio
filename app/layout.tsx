@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 // 1. 引入你剛剛建立的 ThemeProvider
 import { ThemeProvider } from "@/components/theme-provider";
 import Navbar from "@/components/navbar";
+import { Toaster } from "@/components/ui/sonner"; // 引入全域監聽器
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -57,6 +58,7 @@ export default function RootLayout({
           <Navbar />
           <main className="flex-grow bg-background text-foreground">
             {children}
+            <Toaster richColors position="top-right" /> {/* 👈 加上這行，富文本顏色與右上角彈出 */}
           </main>
         </ThemeProvider>
       </body>
