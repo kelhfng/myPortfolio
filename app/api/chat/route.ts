@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 import fs from "fs";
@@ -113,6 +115,8 @@ export async function POST(request: Request) {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Transfer-Encoding": "chunked",
+        "X-Accel-Buffering": "no", // 🔥 關鍵：強制關閉 Vercel/Nginx 的快取機制，實現真正的即時串流
+        "Cache-Control": "no-cache, no-transform",
       },
     });
 
