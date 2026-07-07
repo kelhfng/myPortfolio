@@ -8,7 +8,6 @@ import { projects, Project } from "@/lib/projects-data";
 
 const CATEGORIES = [
   "All",
-  "AI & RAG",
   "Java & Backend",
   "Frontend",
   "Security & Automation",
@@ -17,11 +16,6 @@ const CATEGORIES = [
 
 const matchCategory = (project: Project, category: string) => {
   if (category === "All") return true;
-  if (category === "AI & RAG") {
-    return project.tags.some((tag) =>
-      ["LangChain", "LlamaIndex", "Gemini API", "Vector DB"].includes(tag)
-    );
-  }
   if (category === "Java & Backend") {
     return project.tags.some((tag) =>
       ["Java", "Spring Boot", "Oracle DB", "PHP"].includes(tag)
