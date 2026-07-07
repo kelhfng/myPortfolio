@@ -24,7 +24,7 @@ export default function ResumeAgentSection() {
     {
       role: "model",
       content:
-        "你好！我是主人的 AI 履歷特工。我對主人的 Java 開發、Spring Boot 微服務、RAG 架構以及全端技術瞭若指掌。你想了解他的哪一部分專案經驗或技術實力呢？",
+        "你好！我是 Kelvin 的 AI 履歷特工。我對 Kelvin 的 Java 開發、Spring Boot 微服務、RAG 架構以及全端技術瞭若指掌。你想了解他的哪一部分專案經驗或技術實力呢？",
     },
   ]);
   const [input, setInput] = useState("");
@@ -187,7 +187,7 @@ export default function ResumeAgentSection() {
                     <Loader2 className="h-4 w-4 animate-spin text-neutral-500" />
                   </div>
                   <div className="bg-neutral-100 text-neutral-500 dark:bg-neutral-900 dark:text-neutral-400 rounded-2xl rounded-tl-none px-4 py-2.5 border border-neutral-200/50 dark:border-neutral-800/50 font-mono text-xs flex items-center gap-2">
-                    特工正在組織語言，調閱主人技術庫中...
+                    特工正在組織語言，調閱 Kelvin 技術庫中...
                   </div>
                 </div>
               )}
