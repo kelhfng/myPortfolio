@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,14 +32,12 @@ export default function ResumeAgentSection() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const isFirstRender = useRef(true);
-
   const scrollToBottom = () => {
     setTimeout(() => {
       if (scrollRef.current) {
         scrollRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
-    }, 50); // 這裡微調成 50ms 讓滾動反應更靈敏迅速
+    }, 50);
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -47,10 +45,11 @@ export default function ResumeAgentSection() {
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = { role: "user", content: input };
-    setMessages((prev) => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+
+    setMessages(updatedMessages);
     setInput("");
     setIsLoading(true);
-
     scrollToBottom();
 
     try {
@@ -60,7 +59,7 @@ export default function ResumeAgentSection() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messages: [...messages, userMessage],
+          messages: updatedMessages,
         }),
       });
 
@@ -68,15 +67,48 @@ export default function ResumeAgentSection() {
         throw new Error("API 路由連線失敗");
       }
 
-      const data = await response.json();
-
-      if (data.text) {
-        setMessages((prev) => [...prev, { role: "model", content: data.text }]);
-      } else {
-        throw new Error("未預期的回應格式");
+      if (!response.body) {
+        throw new Error("回應內文無效 (Missing response body)");
       }
+
+      // 建立串流讀取器與解碼器
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      // 先建立一個空的 model 回應佔位，並關閉 Loader 動畫讓文字直接接力滑出
+      setMessages((prev) => [...prev, { role: "model", content: "" }]);
+      setIsLoading(false);
+
+      let done = false;
+      let accumulatedText = "";
+
+      // 串流讀取迴圈
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+
+        if (value) {
+          const chunk = decoder.decode(value, { stream: !done });
+          accumulatedText += chunk;
+
+          // 即時更新最後一則訊息的內容
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            if (newMessages.length > 0) {
+              newMessages[newMessages.length - 1] = {
+                role: "model",
+                content: accumulatedText,
+              };
+            }
+            return newMessages;
+          });
+          scrollToBottom();
+        }
+      }
+
     } catch (error) {
       console.error("Error fetching AI response:", error);
+      setIsLoading(false);
       setMessages((prev) => [
         ...prev,
         {
@@ -85,8 +117,6 @@ export default function ResumeAgentSection() {
             "💥 報告指揮官，後端通訊線路似乎受到干擾，請稍後再試，或檢查主機 Console 紀錄！",
         },
       ]);
-    } finally {
-      setIsLoading(false);
       scrollToBottom();
     }
   };
@@ -114,7 +144,7 @@ export default function ResumeAgentSection() {
               AI_RESUME_AGENT.exe
             </CardTitle>
             <CardDescription className="text-xs font-mono">
-              Status: Online | Powered by Gemini 2.5 Flash
+              Status: Online | Powered by Gemini 2.5 Flash (Streaming)
             </CardDescription>
           </div>
         </CardHeader>
@@ -174,7 +204,7 @@ export default function ResumeAgentSection() {
           >
             <Input
               type="text"
-              placeholder="例如：主人會用 Spring Boot 處理過什麼高併發場景嗎？"
+              placeholder="例如：Kelvin 是誰？"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={isLoading}
