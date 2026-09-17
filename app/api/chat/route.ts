@@ -38,6 +38,9 @@ export async function POST(request: Request) {
         question: lastUserMessage
       };
 
+      // 🔥 終端機與 Vercel Logs 即時輸出，確保無論 KV 連線與否都能在後台 Log 即時看見
+      console.log(`[Resume Agent Log] 🕒 ${logData.timestamp} | 🌐 IP: ${logData.ip} | 💬 提問: "${logData.question}"`);
+
       kv.lpush("resume_agent_logs", JSON.stringify(logData))
         .then(() => kv.ltrim("resume_agent_logs", 0, 999))
         .catch((kvLogError) => {
