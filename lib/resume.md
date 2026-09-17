@@ -78,4 +78,4 @@
 - **職位**: Web Developer (2022年6月 - 2022年12月)
 - **技術**: SQL, Social API (Facebook, Instagram, Google Maps), PHP, HTML5/CSS3
 - **專案描述**: 
-  開發面向中小企業的 Web2Social 快速建站系統，採用模組化 Frame 架構，串接整合 Facebook、
+  開發面向中小企業的 Web2Social 快速建站系統，採用模組化 Frame 架構，串接整合 Facebook、Instagram 與 Google Maps API，協助企業一鍵同步社群內容並快速建立響應式形象官網。

@@ -1,7 +1,9 @@
 export const dynamic = "force-dynamic";
+export const maxDuration = 60; // 允許長達 60 秒的串流生成，避免 Vercel 10 秒預設逾時
 
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
+import { kv } from "@vercel/kv"; // 🔥 引入 Vercel KV
 import fs from "fs";
 import path from "path";
 
@@ -23,6 +25,27 @@ export async function POST(request: Request) {
     // 2. 獲取使用者最後一次的提問
     const lastUserMessage = messages[messages.length - 1]?.content || "";
     const lowerMessage = lastUserMessage.toLowerCase();
+
+    // 從 Header 獲取 Vercel 提供的真實訪客 IP (若在本地測試會拿到 127.0.0.1)
+    const ip = request.headers.get("x-forwarded-for") || "unknown-ip";
+
+    // 2. 🪐 【Vercel KV 核心實作：記錄有人問過什麼】
+    // 非同步寫入 Redis，不使用 await 阻塞後續 Gemini 的串流生成
+    try {
+      const logData = {
+        timestamp: new Date().toISOString(),
+        ip: ip.split(',')[0].trim(), // 只取第一個真實 IP
+        question: lastUserMessage
+      };
+
+      kv.lpush("resume_agent_logs", JSON.stringify(logData))
+        .then(() => kv.ltrim("resume_agent_logs", 0, 999))
+        .catch((kvLogError) => {
+          console.error("Vercel KV 寫入日誌失敗 (不影響用戶正常對話):", kvLogError);
+        });
+    } catch (kvLogError) {
+      console.error("Vercel KV 準備日誌失敗 (不影響用戶正常對話):", kvLogError);
+    }
 
     // 3. 【Hard-Rule 安全過濾攔截】
     const allowedKeywords = [
@@ -62,8 +85,17 @@ export async function POST(request: Request) {
     }
 
     // 5. 格式化歷史訊息符合官方 SDK 規範
-    const formattedContents = messages.map((msg: any) => ({
-      role: msg.role === "assistant" ? "model" : "user",
+    // (1) 過濾掉前端預設的第一則純 UI 歡迎詞 (若是 model 開頭則不送入歷史，因為 Gemini 規定 contents 必須以 user 開頭)
+    const validMessages = messages.filter((msg: any, idx: number) => {
+      if (idx === 0 && (msg.role === "model" || msg.role === "assistant")) {
+        return false;
+      }
+      return true;
+    });
+
+    // (2) 正確對齊角色映射：前端傳入的 role 為 "user" 或 "model"
+    const formattedContents = validMessages.map((msg: any) => ({
+      role: (msg.role === "assistant" || msg.role === "model") ? "model" : "user",
       parts: [{ text: msg.content }],
     }));
 
@@ -80,14 +112,14 @@ export async function POST(request: Request) {
           1. 內斂、專業、硬核、有條理。不使用過度誇張的推銷詞彙，而是用技術實力與架構思維打動人。
           2. 回答時展現對 Java (Spring Boot, Oracle) 與 AI 整合開發的深刻理解。
           3. 預設使用繁體中文 (香港) 回答，稱呼本網站擁有者為 Kelvin。
-          4. 限制回覆的內容精簡到位，長度在1000字內。
+          4. 回答請結構分明、重點突出、精簡到位，避免冗長空話，並確保語意完整結尾。
 
           【你必須完全依據的履歷與專案背景資訊】
           以下是 Kelvin 的完整官方履歷與精選專案细節，請百分之百結合這些內容來精準回答，絕不編造事實：
           \n${resumeContext || "（目前無法讀取參考資料，請溫和提醒稍後再試）"}
         `,
         temperature: 0.5,
-        maxOutputTokens: 1000,
+        maxOutputTokens: 4096, // 提高上限至 4096 tokens，確保繁體中文字元（約 1.5~2.5 tokens/字）能完整輸出而不被腰斬
       },
     });
 

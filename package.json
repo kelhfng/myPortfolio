@@ -11,6 +11,7 @@
   "dependencies": {
     "@google/genai": "^2.6.0",
     "@phosphor-icons/react": "^2.1.10",
+    "@vercel/kv": "^3.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "llamaindex": "^0.12.1",
